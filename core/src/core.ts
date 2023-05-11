@@ -6,11 +6,12 @@ export type Procedures = {
         { key: "http.text", input: HTTPRequest, result: { data: string; status: number } },
     mutations: never,
     subscriptions: 
-        { key: "auth.twitch", input: never, result: Message }
+        { key: "auth.twitch", input: never, result: Message } | 
+        { key: "streamdeck.button", input: never, result: string }
 };
-
-export type Message = "Listening" | { Received: string }
 
 export type HTTPRequest = { url: string; method: HTTPMethod; headers?: { [key: string]: string } | null; body?: any | null }
 
 export type HTTPMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
+
+export type Message = "Listening" | { Received: string }

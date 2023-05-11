@@ -1,13 +1,21 @@
 mod http;
 pub mod twitch;
 
+use std::path::Prefix;
+
 use axum::extract::Query;
+use futures_util::{SinkExt, StreamExt};
 use rspc::{
     alpha::{AlphaRouter, Rspc},
-    Config, Router,
+    AsyncStream, Config, Router,
 };
 use serde::{Deserialize, Serialize};
 use specta::Type;
+use tokio::net::{TcpListener, TcpStream};
+use tokio_tungstenite::tungstenite::{
+    handshake::server::{Request, Response},
+    Error, Message,
+};
 
 #[allow(non_upper_case_globals)]
 pub(self) const R: Rspc<()> = Rspc::new();
@@ -16,6 +24,7 @@ pub fn router() -> Router {
     R.router()
         .merge("http.", http())
         .merge("auth.", auth())
+        .merge("streamdeck.", streamdeck())
         .build(Config::new().export_ts_bindings(
             std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../core/src/core.ts"),
         ))
@@ -143,3 +152,76 @@ fn auth() -> AlphaRouter<()> {
         }),
     )
 }
+
+async fn accept_connection(
+    stream: TcpStream,
+) -> AsyncStream<tokio_tungstenite::tungstenite::Result<Message, Error>> {
+    let mut path = String::new();
+    let callback = |req: &Request, response: Response| {
+        path = req.uri().path().to_string();
+        Ok(response)
+    };
+    let mut ws_stream = tokio_tungstenite::accept_hdr_async(stream, callback)
+        .await
+        .expect("Error during the websocket handshake occurred");
+
+    while let Some(mut msg) = ws_stream.next().await {
+        // println!("{}: {}", path, msg);
+        yield msg;
+    }
+}
+
+fn streamdeck() -> AlphaRouter<()> {
+    R.router().procedure(
+        "button",
+        R.subscription(|_, _: ()| async move {
+            let addr = "127.0.0.1:5858".to_string();
+            // Create the event loop and TCP listener we'll accept connections on.
+            let try_socket = TcpListener::bind(&addr).await;
+            let listener = try_socket.expect("Failed to bind");
+
+            async_stream::stream! {
+                while let Ok((stream, _)) = listener.accept().await {
+                    tokio::spawn(accept_connection(stream));
+                }
+            }
+        }),
+    )
+}
+
+// fn streamdeck() -> AlphaRouter<()> {
+//     R.router().procedure(
+//         "button",
+//         R.subscription(|_, _: String | async move {
+//             let addr = "127.0.0.1:5858".to_string();
+
+//             // Create the event loop and TCP listener we'll accept connections on.
+//             let try_socket = TcpListener::bind(&addr).await;
+//             let listener = try_socket.expect("Failed to bind");
+
+//             while let Ok((stream, _)) = listener.accept().await {
+//                 tokio::spawn(accept_connection(stream));
+//             }
+
+//             async fn accept_connection(
+//                 stream: TcpStream,
+//             ) -> tokio_tungstenite::tungstenite::Result<()> {
+//                 let mut path = String::new();
+//                 let callback = |req: &Request, response: Response| {
+//                     path = req.uri().path().to_string();
+//                     Ok(response)
+//                 };
+//                 let mut ws_stream = tokio_tungstenite::accept_hdr_async(stream, callback)
+//                     .await
+//                     .expect("Error during the websocket handshake occurred");
+
+//                 async_stream::stream! {
+//                     while let Some(msg) = ws_stream.next().await {
+//                         println!("{}: {}", path, msg.unwrap());
+//                         yield msg;
+//                     }
+//                 }
+//             }
+//         }),
+//     )
+// }

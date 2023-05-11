@@ -1781,6 +1781,7 @@ version = "0.1.0"
 dependencies = [
  "async-stream",
  "axum",
+ "futures-util",
  "opener",
  "reqwest",
  "rspc",
@@ -1788,6 +1789,7 @@ dependencies = [
  "serde_json",
  "specta",
  "tokio",
+ "tokio-tungstenite",
  "tower-http",
  "url",
  "urlencoding",

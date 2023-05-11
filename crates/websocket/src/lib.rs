@@ -26,6 +26,7 @@ async fn accept_connection(stream: TcpStream) -> tokio_tungstenite::tungstenite:
     while let Some(msg) = ws_stream.next().await {
         let msg = msg?;
         println!("{}: {}", path, msg);
+
         if msg.is_text() || msg.is_binary() {
             ws_stream.send(msg).await?;
         }
