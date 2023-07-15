@@ -989,3 +989,38 @@ pkg.createNonEventSchema({
     });
   },
 });
+
+pkg.createEventSchema({
+  event: "custom",
+  name: "Custom Event",
+  generateIO(io) {
+    io.execOutput({
+      id: "exec",
+      name: "",
+    });
+    io.dataOutput({
+      id: "event",
+      name: "Event Name",
+      type: t.string(),
+    });
+  },
+  run({ ctx, data }) {
+    ctx.setOutput("event", data);
+    ctx.exec("exec");
+  },
+});
+
+pkg.createNonEventSchema({
+  name: "Emit Custom Event",
+  variant: "Exec",
+  generateIO(io) {
+    io.dataInput({
+      id: "event",
+      name: "Event Name",
+      type: t.string(),
+    });
+  },
+  run({ ctx }) {
+    pkg.emitEvent({ name: "custom", data: ctx.getInput("event") });
+  },
+});
