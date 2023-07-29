@@ -2,11 +2,18 @@ import { onMount, Show } from "solid-js";
 import { CoreProvider } from "./contexts";
 import { Graph } from "~/components/Graph";
 import { GraphList } from "~/components/ProjectSidebar";
-import { core, SerializedProject } from "@macrograph/core";
+import {
+  CommentBox,
+  core,
+  SerializedProject,
+  Node,
+  DataInput,
+} from "@macrograph/core";
 import "@macrograph/packages";
 import { createUIStore, UIStoreProvider } from "./UIStore";
 import { PrintOutput } from "./components/PrintOutput";
 import Settings from "./settings";
+import { Fallback } from "@kobalte/core/dist/types/image";
 
 function App() {
   const ui = createUIStore();
@@ -38,6 +45,35 @@ function App() {
           <Show when={ui.state.currentGraph} fallback="No Graph">
             {(graph) => <Graph graph={graph()} />}
           </Show>
+          <div>
+            <Show when={ui.state.selectedItem}>
+              {(item) => (
+                <div class="flex flex-col bg-neutral-600 w-96 shadow-2xl">
+                  <Show when={item() instanceof CommentBox}>
+                    {/* @ts-ignore */}
+                    {item().text}
+                  </Show>
+                  <Show when={item() instanceof Node}>
+                    {/* @ts-ignore */}
+                    {item().name}
+                    <br />
+                    {item().position.x}
+                    <br />
+                    {item().position.y}
+                    <br />
+                    {item().inputs.map((input) => (
+                      <Show when={input instanceof DataInput}>
+                        <div>
+                          {input.name}: {input.defaultValue}
+                          <br />
+                        </div>
+                      </Show>
+                    ))}
+                  </Show>
+                </div>
+              )}
+            </Show>
+          </div>
         </div>
       </CoreProvider>
     </UIStoreProvider>
