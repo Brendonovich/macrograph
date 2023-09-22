@@ -6,6 +6,8 @@ import { SCOPES } from "~/schemas";
 
 export const prerender = false;
 
+export const config = { runtime: "edge" };
+
 export const GET: APIRoute = async (ctx) => {
   const state = await new jose.SignJWT({
     ...JSON.parse(
