@@ -49,7 +49,7 @@ export function createAuth(clientId: string, core: Core) {
       data,
       refreshTimer: setTimeout(
         () => refresh(data.id),
-        token.issued_at + token.expires_in - Date.now()
+        (token.issued_at + token.expires_in - Date.now()) * 1000
       ),
     });
 
