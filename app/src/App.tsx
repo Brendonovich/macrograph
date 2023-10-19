@@ -55,6 +55,7 @@ export default function () {
       pkgs.map.pkg,
       pkgs.obs.pkg,
       pkgs.patreon.pkg,
+      pkgs.physics.pkg,
       pkgs.spotify.pkg,
       () =>
         pkgs.streamdeck.pkg({
