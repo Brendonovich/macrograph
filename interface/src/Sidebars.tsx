@@ -22,7 +22,7 @@ export function LeftSidebar() {
 function GraphSidebar(_: { graph: Graph }) {
   return (
     <>
-      <SidebarSection title="Variables"></SidebarSection>
+      <SidebarSection title="Graph Variables"></SidebarSection>
     </>
   );
 }

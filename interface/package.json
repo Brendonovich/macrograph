@@ -15,6 +15,7 @@
     "@macrograph/core": "workspace:*",
     "@macrograph/packages": "workspace:*",
     "@modular-forms/solid": "^0.12.2",
+    "@solid-primitives/keyboard": "^1.2.5",
     "@solid-primitives/map": "^0.4.3",
     "clsx": "^1.2.1",
     "solid-headless": "^0.13.1",

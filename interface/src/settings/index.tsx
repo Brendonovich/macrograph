@@ -47,6 +47,11 @@ function OpenSettingsDialog(props: ParentProps) {
 
   const [open, setOpen] = createSignal(false);
 
+  // createShortcut(["Meta", ","], () => {
+  //   console.log("woejf");
+  //   setOpen((o) => !o);
+  // });
+
   return (
     <Dialog.Root onOpenChange={setOpen} open={open()} trigger={props.children}>
       <div class="flex flex-col bg-neutral-800 rounded-lg overflow-hidden w-full max-w-2xl min-w-[40rem]">

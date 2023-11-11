@@ -4,6 +4,7 @@
     "app": "pnpm --filter @macrograph/app --",
     "core": "pnpm --filter @macrograph/core --",
     "web": "pnpm --filter @macrograph/web --",
+    "interface": "pnpm --filter @macrograph/interface --",
     "test": "vitest --browser=safari",
     "typecheck": "tsc -b",
     "lint": "turbo run lint",
