@@ -2,8 +2,12 @@ import { createEffect, createSignal, onCleanup, on } from "solid-js";
 import {
   createEnum,
   createStruct,
+  None,
   OnEvent,
+  Option,
+  OptionType,
   Package,
+  Some,
   t,
 } from "@macrograph/core";
 import { z } from "zod";
@@ -79,36 +83,73 @@ export function createEventSub(helix: Helix, onEvent: OnEvent) {
   return { state };
 }
 
-const PredictionStatus = createEnum("Prediction Status", (e) => [
+const predictionStatus = createEnum("Prediction Status", (e) => [
   e.variant("resolved"),
   e.variant("canceled"),
 ]);
 
-const OutcomesBegin = createStruct("Outcomes Begin", (s) => ({
+type OutcomeBegin = {
+  id: string;
+  title: string;
+  color: string;
+};
+
+type OutcomesBegin = {
+  id: string;
+  title: string;
+  color: string;
+}[];
+
+const outcomesBegin = createStruct("Outcomes Begin", (s) => ({
   id: s.field("id", t.string()),
   title: s.field("title", t.string()),
   color: s.field("Color", t.string()),
 }));
 
-const TopPredictors = createStruct("Top Predictors", (s) => ({
-  userName: s.field("User Name", t.string()),
-  userLogin: s.field("User Login", t.string()),
-  userId: s.field("User ID", t.string()),
-  channelPointsWon: s.field("Channel Points Won", t.option(t.int())),
-  channelPointsUser: s.field("Channel Points User", t.int()),
+type Predictors = {
+  user_name: string;
+  user_login: string;
+  user_id: string;
+  channel_points_won: Option<number>;
+  channel_points_used: number;
+}[];
+
+const topPredictors = createStruct("Top Predictors", (s) => ({
+  user_name: s.field("User Name", t.string()),
+  user_login: s.field("User Login", t.string()),
+  user_id: s.field("User ID", t.string()),
+  channel_points_won: s.field("Channel Points Won", t.option(t.int())),
+  channel_points_used: s.field("Channel Points Used", t.int()),
 }));
 
-const OutcomesProgress = createStruct("Outcomes Progress", (s) => ({
+type Outcomes = {
+  id: string;
+  title: string;
+  color: string;
+  users: number;
+  channel_points: number;
+  top_predictors: Predictors;
+};
+
+type OutcomesProgress = {
+  id: string;
+  title: string;
+  color: string;
+  users: number;
+  channel_points: number;
+  top_predictors: Predictors;
+}[];
+
+const outcomesProgress = createStruct("Outcomes Progress", (s) => ({
   id: s.field("id", t.string()),
   title: s.field("title", t.string()),
   color: s.field("Color", t.string()),
   users: s.field("Users", t.int()),
-  channelPoints: s.field("Channel Points", t.int()),
-  topPredictors: s.field("Top Predictors", t.list(t.struct(TopPredictors))),
-  votes: s.field("votes", t.int()),
+  channel_points: s.field("Channel Points", t.int()),
+  top_predictors: s.field("Top Predictors", t.list(t.struct(topPredictors))),
 }));
 
-const Poll = createStruct("Choices", (s) => ({
+const poll = createStruct("Choices", (s) => ({
   id: s.field("id", t.string()),
   title: s.field("title", t.string()),
   channel_points_votes: s.field("Channel Points Votes", t.option(t.int())),
@@ -765,7 +806,7 @@ export function register(pkg: Package) {
         choices: io.dataOutput({
           id: "choices",
           name: "Choices",
-          type: t.list(t.struct(Poll)),
+          type: t.list(t.struct(poll)),
         }),
         channelPointVotingEnabled: io.dataOutput({
           id: "channelPointVotingEnabled",
@@ -810,7 +851,7 @@ export function register(pkg: Package) {
         choices: io.dataOutput({
           id: "choices",
           name: "Choices",
-          type: t.list(t.struct(Poll)),
+          type: t.list(t.struct(poll)),
         }),
         channelPointVotingEnabled: io.dataOutput({
           id: "channelPointVotingEnabled",
@@ -855,7 +896,7 @@ export function register(pkg: Package) {
         choices: io.dataOutput({
           id: "choices",
           name: "Choices",
-          type: t.list(t.struct(Poll)),
+          type: t.list(t.struct(poll)),
         }),
         channelPointVotingEnabled: io.dataOutput({
           id: "channelPointVotingEnabled",
@@ -900,13 +941,22 @@ export function register(pkg: Package) {
         outcomes: io.dataOutput({
           id: "outcomes",
           name: "Outcomes",
-          type: t.list(t.struct(OutcomesBegin)),
+          type: t.list(t.struct(outcomesBegin)),
         }),
       };
     },
     run({ ctx, data, io }) {
+      let outcomes: OutcomesBegin = [];
+      data.outcomes.forEach((outcome: OutcomeBegin) => {
+        let item = outcomesBegin.create({
+          id: outcome.id,
+          title: outcome.title,
+          color: outcome.color,
+        });
+        outcomes.push(item);
+      });
       ctx.setOutput(io.title, data.title);
-      ctx.setOutput(io.outcomes, data.outcomes);
+      ctx.setOutput(io.outcomes, outcomes);
       ctx.exec(io.exec);
     },
   });
@@ -927,13 +977,41 @@ export function register(pkg: Package) {
         outcomes: io.dataOutput({
           id: "outcomes",
           name: "Outcomes",
-          type: t.list(t.struct(OutcomesProgress)),
+          type: t.list(t.struct(outcomesProgress)),
         }),
       };
     },
     run({ ctx, data, io }) {
+      let outcomes: OutcomesProgress = [];
+      data.outcomes.forEach((outcome: Outcomes) => {
+        let predictors: Predictors = [];
+        outcome.top_predictors.forEach((prediction) => {
+          let item = topPredictors.create({
+            user_name: prediction.user_name,
+            user_id: prediction.user_id,
+            user_login: prediction.user_login,
+            channel_points_used: prediction.channel_points_used,
+            channel_points_won:
+              prediction.channel_points_won === null
+                ? None
+                : Some(prediction.channel_points_won),
+          });
+          predictors.push(item);
+        });
+        let item = outcomesProgress.create({
+          id: data.id,
+          title: data.title,
+          color: data.color,
+          users: data.users,
+          channel_points: data.channel_points,
+          top_predictors: predictors,
+        });
+        outcomes.push(item);
+        console.log(predictors);
+      });
+      console.log(outcomes);
       ctx.setOutput(io.title, data.title);
-      ctx.setOutput(io.outcomes, data.outcomes);
+      ctx.setOutput(io.outcomes, outcomes);
       ctx.exec(io.exec);
     },
   });
@@ -954,13 +1032,40 @@ export function register(pkg: Package) {
         outcomes: io.dataOutput({
           id: "outcomes",
           name: "Outcomes",
-          type: t.list(t.struct(OutcomesProgress)),
+          type: t.list(t.struct(outcomesProgress)),
         }),
       };
     },
     run({ ctx, data, io }) {
+      console.log(data.outcomes);
+      let outcomes: OutcomesProgress = [];
+      data.outcomes.forEach((outcome: Outcomes) => {
+        let predictors: Predictors = [];
+        outcome.top_predictors.forEach((prediction) => {
+          let item = topPredictors.create({
+            user_name: prediction.user_name,
+            user_id: prediction.user_id,
+            user_login: prediction.user_login,
+            channel_points_used: prediction.channel_points_used,
+            channel_points_won:
+              prediction.channel_points_won === null
+                ? None
+                : Some(prediction.channel_points_won),
+          });
+          predictors.push(item);
+        });
+        let item = outcomesProgress.create({
+          id: data.id,
+          title: data.title,
+          color: data.color,
+          users: data.users,
+          channel_points: data.channel_points,
+          top_predictors: predictors,
+        });
+        outcomes.push(item);
+      });
       ctx.setOutput(io.title, data.title);
-      ctx.setOutput(io.outcomes, data.outcomes);
+      ctx.setOutput(io.outcomes, outcomes);
       ctx.exec(io.exec);
     },
   });
@@ -981,7 +1086,7 @@ export function register(pkg: Package) {
         outcomes: io.dataOutput({
           id: "outcomes",
           name: "Outcomes",
-          type: t.list(t.struct(OutcomesProgress)),
+          type: t.list(t.struct(outcomesProgress)),
         }),
         winningOutcomeId: io.dataOutput({
           id: "winningOutcomeId",
@@ -991,13 +1096,40 @@ export function register(pkg: Package) {
         status: io.dataOutput({
           id: "status",
           name: "Status",
-          type: t.enum(PredictionStatus),
+          type: t.enum(predictionStatus),
         }),
       };
     },
     run({ ctx, data, io }) {
+      console.log(data);
+      let outcomes: OutcomesProgress = [];
+      data.outcomes.forEach((outcome: Outcomes) => {
+        let predictors: Predictors = [];
+        outcome.top_predictors.forEach((prediction) => {
+          let item = topPredictors.create({
+            user_name: prediction.user_name,
+            user_id: prediction.user_id,
+            user_login: prediction.user_login,
+            channel_points_used: prediction.channel_points_used,
+            channel_points_won:
+              prediction.channel_points_won === null
+                ? None
+                : Some(prediction.channel_points_won),
+          });
+          predictors.push(item);
+        });
+        let item = outcomesProgress.create({
+          id: data.id,
+          title: data.title,
+          color: data.color,
+          users: data.users,
+          channel_points: data.channel_points,
+          top_predictors: predictors,
+        });
+        outcomes.push(item);
+      });
       ctx.setOutput(io.title, data.title);
-      ctx.setOutput(io.outcomes, data.outcomes);
+      ctx.setOutput(io.outcomes, outcomes);
       ctx.setOutput(io.winningOutcomeId, data.winning_outcome_id);
       ctx.setOutput(io.status, data.status);
       ctx.exec(io.exec);
