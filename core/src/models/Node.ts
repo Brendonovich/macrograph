@@ -63,7 +63,7 @@ export class Node {
   ioReturn: any;
   dispose: () => void;
 
-  dataRoots!: Accessor<Set<Node>>;
+  // dataRoots!: Accessor<Set<Node>>;
 
   constructor(args: NodeArgs) {
     this.id = args.id;
@@ -116,19 +116,20 @@ export class Node {
         this.io = io;
       });
 
-      this.dataRoots = createMemo(() => {
-        const roots = new Set<Node>();
+      // this.dataRoots = createMemo(() => {
+      //   const roots = new Set<Node>();
 
-        for (const input of this.state.inputs) {
-          if (input instanceof DataInput) {
-            input.connection.peek((c) => {
-              c.node.dataRoots().forEach((n) => roots.add(n));
-            });
-          }
-        }
+      //   for (const input of this.state.inputs) {
+      //     if (input instanceof DataInput) {
+      //       input.connection.peek((c) => {
+      //         console.log(c);
+      //         c.node.dataRoots().forEach((n) => roots.add(n));
+      //       });
+      //     }
+      //   }
 
-        return roots;
-      });
+      //   return roots;
+      // });
 
       this.graph.project.core.addEventNodeMapping(this);
 

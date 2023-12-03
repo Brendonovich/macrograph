@@ -1,6 +1,11 @@
-import { createSignal } from "solid-js";
+import {
+  EffectFunction,
+  MemoOptions,
+  createMemo,
+  createSignal,
+} from "solid-js";
 
-import { Option, Some } from "../types";
+import { None, Option, Some } from "../types";
 
 export * from "./pins";
 
@@ -40,6 +45,29 @@ export function makePersisted<T>(
       return newValue;
     },
   ];
+}
+
+export function createOptionMemo<T>(
+  effect: EffectFunction<Option<T>>,
+  options?: MemoOptions<T>
+) {
+  return createMemo(effect, None, {
+    ...options,
+    equals: (prev, next) => {
+      const eq = prev.eq(next);
+
+      const equalsFn = options?.equals;
+      if (!equalsFn || typeof equalsFn !== "function") return eq;
+
+      return (
+        eq ||
+        prev
+          .zip(next)
+          .map(([prev, next]) => equalsFn(prev, next))
+          .unwrapOr(false)
+      );
+    },
+  });
 }
 
 export type WsMessage = "Connected" | "Disconnected" | { Text: string };

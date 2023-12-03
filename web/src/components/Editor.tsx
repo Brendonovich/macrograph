@@ -1,6 +1,7 @@
 import { Core } from "@macrograph/core";
 import { Interface } from "@macrograph/interface";
 import * as pkgs from "@macrograph/packages";
+import "solid-devtools";
 
 import { env } from "~/env/client";
 

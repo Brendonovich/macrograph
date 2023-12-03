@@ -30,5 +30,6 @@ export const colour = (type: AnyType): string => {
     else return "white";
   }
 
+  return "white";
   throw new Error();
 };
