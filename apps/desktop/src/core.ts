@@ -94,5 +94,6 @@ const wsProvider = createWsProvider({
   pkgs.speakerbot.pkg,
   () => pkgs.websocketServer.pkg(wsProvider),
   pkgs.globalKeyboardMouse.pkg,
+  pkgs.elevenlabs.pkg,
   // pkgs.midi.pkg,
 ].map((p) => core.registerPackage(p));
